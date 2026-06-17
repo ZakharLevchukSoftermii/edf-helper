@@ -16,9 +16,11 @@ const TH_STYLE: React.CSSProperties = {
 interface Props {
   signals: EdfSignal[]
   ns: number
+  renamedLabels: Record<number, string>
+  onLabelChange: (idx: number, val: string) => void
 }
 
-export default function SignalsTable({ signals, ns }: Props) {
+export default function SignalsTable({ signals, ns, renamedLabels, onLabelChange }: Props) {
   return (
     <div style={{ background: '#fff', border: '1px solid #e3e6eb', borderRadius: 14, overflow: 'hidden' }}>
       <div style={{ padding: '14px 20px', borderBottom: '1px solid #eef0f3', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -26,11 +28,12 @@ export default function SignalsTable({ signals, ns }: Props) {
         <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, color: '#2b6cf0', background: '#eaf1fe', borderRadius: 5, padding: '2px 7px' }}>{ns}</span>
       </div>
       <div style={{ overflowX: 'auto' }}>
-        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 880, fontSize: 13 }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 920, fontSize: 13 }}>
           <thead>
             <tr style={{ textAlign: 'left' }}>
               <th style={{ ...TH_STYLE, textAlign: 'right' }}>#</th>
               <th style={TH_STYLE}>Label</th>
+              <th style={TH_STYLE}>New label</th>
               <th style={TH_STYLE}>Unit</th>
               <th style={{ ...TH_STYLE, textAlign: 'right' }}>Phys Min</th>
               <th style={{ ...TH_STYLE, textAlign: 'right' }}>Phys Max</th>
@@ -48,10 +51,29 @@ export default function SignalsTable({ signals, ns }: Props) {
               const rowColor = muted ? '#aab2bf' : '#2a3340'
               const TD: React.CSSProperties = { padding: '9px 14px', borderBottom: '1px solid #f4f5f7', color: rowColor }
               const MONO: React.CSSProperties = { ...TD, fontFamily: "'IBM Plex Mono',monospace" }
+              const zeroIdx = sig.index - 1
               return (
                 <tr key={sig.index}>
                   <td style={{ ...MONO, textAlign: 'right', color: muted ? '#aab2bf' : '#b3bac6' }}>{sig.index}</td>
                   <td style={{ ...MONO, fontWeight: 600, whiteSpace: 'nowrap' }}>{sig.label || '—'}</td>
+                  <td style={{ ...TD, minWidth: 140 }}>
+                    {muted ? (
+                      <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, color: '#b3bac6' }}>—</span>
+                    ) : (
+                      <input
+                        value={renamedLabels[zeroIdx] ?? ''}
+                        onChange={(e) => onLabelChange(zeroIdx, e.target.value)}
+                        placeholder={sig.label || ''}
+                        style={{
+                          width: '100%', fontFamily: "'IBM Plex Mono',monospace", fontSize: 13,
+                          color: '#1c2430', background: '#fff', border: '1px solid #d3d8df',
+                          borderRadius: 6, padding: '6px 9px', outline: 'none',
+                        }}
+                        onFocus={(e) => { e.target.style.borderColor = '#2b6cf0'; e.target.style.boxShadow = '0 0 0 2px #eaf1fe' }}
+                        onBlur={(e) => { e.target.style.borderColor = '#d3d8df'; e.target.style.boxShadow = 'none' }}
+                      />
+                    )}
+                  </td>
                   <td style={MONO}>{sig.unit || '—'}</td>
                   <td style={{ ...MONO, textAlign: 'right' }}>{sig.physMin || '—'}</td>
                   <td style={{ ...MONO, textAlign: 'right' }}>{sig.physMax || '—'}</td>

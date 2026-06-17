@@ -28,13 +28,15 @@ function buildSummaryRows(p: ParsedEdf): SummaryRow[] {
 
 interface Props {
   parsed: ParsedEdf
+  renamedLabels: Record<number, string>
+  onLabelChange: (idx: number, val: string) => void
 }
 
-export default function InfoTab({ parsed }: Props) {
+export default function InfoTab({ parsed, renamedLabels, onLabelChange }: Props) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 24 }}>
       <FileSummaryCard rows={buildSummaryRows(parsed)} />
-      <SignalsTable signals={parsed.signals} ns={parsed.ns} />
+      <SignalsTable signals={parsed.signals} ns={parsed.ns} renamedLabels={renamedLabels} onLabelChange={onLabelChange} />
     </div>
   )
 }

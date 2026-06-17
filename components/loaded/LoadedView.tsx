@@ -13,6 +13,7 @@ interface Props {
   dayOptions: DayOption[]
   startHint: string
   endHint: string
+  renamedLabels: Record<number, string>
   onTabChange: (tab: ActiveTab) => void
   onCutChange: (update: Partial<CutRangeUI>) => void
   onStartDayChange: (day: number) => void
@@ -21,6 +22,8 @@ interface Props {
   onCommitEnd: () => void
   onDrag: (which: 'start' | 'end', sec: number) => void
   onDownload: () => void
+  onDownloadWithRenames: () => void
+  onLabelChange: (idx: number, val: string) => void
 }
 
 const tabBase: React.CSSProperties = {
@@ -34,12 +37,12 @@ const tabIdle: React.CSSProperties = { ...tabBase, color: '#8b94a3' }
 
 export default function LoadedView({
   parsed, activeTab, cut, downloading, downloaded,
-  dayOptions, startHint, endHint,
+  dayOptions, startHint, endHint, renamedLabels,
   onTabChange, onCutChange, onStartDayChange, onEndDayChange,
-  onCommitStart, onCommitEnd, onDrag, onDownload,
+  onCommitStart, onCommitEnd, onDrag, onDownload, onDownloadWithRenames, onLabelChange,
 }: Props) {
   return (
-    <div style={{ maxWidth: 1080, margin: '0 auto', padding: '24px 24px 80px', animation: 'edffade .35s ease both' }}>
+    <div style={{ maxWidth: 1180, margin: '0 auto', padding: '24px 24px 80px', animation: 'edffade .35s ease both' }}>
       {/* file header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 22, flexWrap: 'wrap' }}>
         <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 18, fontWeight: 600, letterSpacing: '-0.01em', wordBreak: 'break-all' }}>{parsed.fileName}</div>
@@ -53,7 +56,9 @@ export default function LoadedView({
         <button onClick={() => onTabChange('cut')} style={activeTab === 'cut' ? tabActive : tabIdle}>Cut</button>
       </div>
 
-      {activeTab === 'info' && <InfoTab parsed={parsed} />}
+      {activeTab === 'info' && (
+        <InfoTab parsed={parsed} renamedLabels={renamedLabels} onLabelChange={onLabelChange} />
+      )}
 
       {activeTab === 'cut' && (
         <CutTab
@@ -71,6 +76,7 @@ export default function LoadedView({
           onCommitEnd={onCommitEnd}
           onDrag={onDrag}
           onDownload={onDownload}
+          onDownloadWithRenames={onDownloadWithRenames}
         />
       )}
     </div>

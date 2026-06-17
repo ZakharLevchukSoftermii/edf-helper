@@ -73,6 +73,7 @@ export default function EdfApp() {
   const [cut, setCut] = useState<CutRangeUI>({ startSec: 0, endSec: 0, startStr: '00:00:00', endStr: '00:00:00', startDay: 1, endDay: 1 })
   const [downloading, setDownloading] = useState(false)
   const [downloaded, setDownloaded] = useState(false)
+  const [renamedLabels, setRenamedLabels] = useState<Record<number, string>>({})
 
   const bufferRef = useRef<ArrayBuffer | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -97,6 +98,7 @@ export default function EdfApp() {
       setActiveTab('info')
       setDownloaded(false)
       setDownloading(false)
+      setRenamedLabels({})
       setPhase('loaded')
     } catch (err) {
       setPhase('error')
@@ -111,7 +113,17 @@ export default function EdfApp() {
     setErrorMsg('')
     setDragOver(false)
     setDownloaded(false)
+    setRenamedLabels({})
     setPhase('upload')
+  }
+
+  function handleLabelChange(idx: number, val: string) {
+    setRenamedLabels((prev) => {
+      const next = { ...prev }
+      if (val.trim() === '') delete next[idx]
+      else next[idx] = val.trim()
+      return next
+    })
   }
 
   // ---- drag / file input handlers ------------------------------------------
@@ -250,6 +262,45 @@ export default function EdfApp() {
     }, 30)
   }
 
+  function applyRenamedLabels(bytes: Uint8Array, labels: Record<number, string>) {
+    for (const [idxStr, newLabel] of Object.entries(labels)) {
+      const idx = Number(idxStr)
+      const off = 256 + idx * 16
+      const trimmed = newLabel.slice(0, 16)
+      for (let i = 0; i < 16; i++) {
+        bytes[off + i] = i < trimmed.length ? (trimmed.charCodeAt(i) & 0xff) : 0x20
+      }
+    }
+  }
+
+  function doDownloadWithRenames() {
+    if (!parsed || !bufferRef.current) return
+    const recDur = parsed.recDuration > 0 ? parsed.recDuration : 1
+    const nRec = Math.floor(cut.endSec / recDur) - Math.floor(cut.startSec / recDur)
+    if (nRec <= 0) return
+    setDownloading(true)
+    setDownloaded(false)
+    setTimeout(() => {
+      try {
+        const { bytes, suggestedName } = cutEdf(bufferRef.current!, parsed, cut.startSec, cut.endSec)
+        if (Object.keys(renamedLabels).length > 0) applyRenamedLabels(bytes, renamedLabels)
+        const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }))
+        const a = document.createElement('a')
+        a.href = url
+        a.download = suggestedName
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        setTimeout(() => URL.revokeObjectURL(url), 2000)
+        setDownloading(false)
+        setDownloaded(true)
+      } catch (err) {
+        setDownloading(false)
+        setErrorMsg((err instanceof Error ? err.message : String(err)) || 'Download failed.')
+      }
+    }, 30)
+  }
+
   // ---- build day options ---------------------------------------------------
 
   function buildDayOptions(p: ParsedEdf) {
@@ -321,6 +372,7 @@ export default function EdfApp() {
           dayOptions={buildDayOptions(parsed)}
           startHint={buildHint(parsed, cut.startSec)}
           endHint={buildHint(parsed, cut.endSec)}
+          renamedLabels={renamedLabels}
           onTabChange={setActiveTab}
           onCutChange={handleCutChange}
           onStartDayChange={(day) => commitField('start', day)}
@@ -329,6 +381,8 @@ export default function EdfApp() {
           onCommitEnd={() => commitField('end', cut.endDay)}
           onDrag={applyDrag}
           onDownload={doDownload}
+          onDownloadWithRenames={doDownloadWithRenames}
+          onLabelChange={handleLabelChange}
         />
       )}
     </div>

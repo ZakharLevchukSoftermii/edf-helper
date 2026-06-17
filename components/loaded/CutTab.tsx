@@ -22,6 +22,7 @@ interface Props {
   onCommitEnd: () => void
   onDrag: (which: 'start' | 'end', sec: number) => void
   onDownload: () => void
+  onDownloadWithRenames: () => void
 }
 
 function gfmt(x: number): string {
@@ -44,7 +45,7 @@ export default function CutTab({
   parsed, cut, downloading, downloaded,
   dayOptions, startHint, endHint,
   onCutChange, onStartDayChange, onEndDayChange,
-  onCommitStart, onCommitEnd, onDrag, onDownload,
+  onCommitStart, onCommitEnd, onDrag, onDownload, onDownloadWithRenames,
 }: Props) {
   const recDur = parsed.recDuration > 0 ? parsed.recDuration : 1
   const startRecord = Math.floor(cut.startSec / recDur)
@@ -118,6 +119,7 @@ export default function CutTab({
         downloaded={downloaded}
         outFileName={buildOutFileName(parsed, cut.startSec)}
         onDownload={onDownload}
+        onDownloadWithRenames={onDownloadWithRenames}
       />
     </div>
   )
